@@ -1,0 +1,17 @@
+Are failures normal // to be expected on an AWS cluster?
+
+I have a Spark job running on about 300 GB of log files, on Amazon EC2,
+with 10 x Large instances (each with 600 GB disk). The job hasn't yet
+completed.
+
+So far, 18 stages have completed (2 of which have retries) and 3 stages
+have failed. In each failed stage there are ~160 successful tasks, but
+"CANNOT FIND ADDRESS" for half of the executors.
+
+Are these numbers normal for AWS? Should a certain number of faults be
+expected? I know that AWS isn't meant to be perfect, but this doesn't seem
+right.
+
+Cheers
+
+Joe

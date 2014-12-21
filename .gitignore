@@ -1,3 +1,5 @@
+twitter4j.properties
+data/*.parquet
 *~
 
 # Byte-compiled / optimized / DLL files

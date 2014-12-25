@@ -9,6 +9,8 @@
 
 # http://martinfowler.com/articles/microservices.html
 
+# http://www.yseam.com/blog/WV.html
+
 #import nltk
 #nltk.data.path.append("~/nltk_data/")
 

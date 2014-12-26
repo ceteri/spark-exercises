@@ -4,32 +4,20 @@
 # TextRank, based on:
 # http://web.eecs.umich.edu/~mihalcea/papers/mihalcea.emnlp04.pdf
 
-# sudo python -m nltk.downloader -d /Users/ceteri/nltk_data all
-# https://s3.amazonaws.com/textblob/nltk_data.tar.gz 
-
-# http://martinfowler.com/articles/microservices.html
-
-# http://www.yseam.com/blog/WV.html
-
-#import nltk
-#nltk.data.path.append("~/nltk_data/")
-
+from itertools import tee, izip
 from textblob import TextBlob
 from textblob_aptagger import PerceptronTagger
 import hashlib
 import json
-import numpy as np
 import re
 import sys
-import string
 import uuid
 
-DEBUG = True # False
+DEBUG = False # True
 
 PAT_PUNCT = re.compile(r'^\W+$')
 POS_KEEPS = ['v', 'n', 'j', 'r']
 POS_LEMMA = ['v', 'n']
-PUNCT = set(string.punctuation)
 TAGGER = PerceptronTagger()
 UNIQ_WORDS = { ".": 0 }
 
@@ -47,13 +35,36 @@ def get_word_id (root):
   return UNIQ_WORDS[root]
 
 
+def sliding_window (iterable, size):
+  """apply a sliding window to produce 'size' tiles"""
+  iters = tee(iterable, size)
+
+  for i in xrange(1, size):
+    for each in iters[i:]:
+      next(each, None)
+
+  return list(izip(*iters))
+
+
+def get_tiles (graf, size=3):
+  """generate word pairs for the TextRank graph"""
+  for seq in sliding_window(graf, size):
+    for word in seq[1:]:
+      w0, w1 = (seq[0], word,)
+
+      if w0[4] == w1[4] == 1:
+        yield (w0[0], w1[0],)
+
+
 def tag_doc (text):
+  """parse and markup a document"""
   global DEBUG
   global POS_KEEPS, POS_LEMMA, PAT_PUNCT, TAGGER
 
   m = hashlib.sha1()
   i = 0
   doc = []
+  tiles = []
 
   for s in TextBlob(text).sentences:
     graf = []
@@ -94,6 +105,9 @@ def tag_doc (text):
       i += 1
       p_idx += 1
 
+    # tile the pairs for TextRank
+    tiles.append(list(get_tiles(graf)))
+
   meta = {
     "uuid": str(uuid.uuid4()).replace('-', ''),
     "len": i,
@@ -103,12 +117,21 @@ def tag_doc (text):
     "subjectivity": s.sentiment.subjectivity
     }
 
-  return (meta, doc,)
+  return (meta, doc, tiles)
+
+
+def pretty_print (obj, indent=False):
+  """pretty print a JSON object"""
+  if indent:
+    return json.dumps(obj, sort_keys=True, indent=2, separators=(',', ': ',))
+  else:
+    return json.dumps(obj, sort_keys=True)
 
 
 if __name__ == "__main__":
   def new_graf (graf):
     return [], " ".join(graf)
+
 
   def parse_graf (graf_text):
     global DEBUG
@@ -117,7 +140,7 @@ if __name__ == "__main__":
       print graf_text
 
     if len(graf_text) > 0:
-      return json.dumps(tag_doc(graf_text), indent=2, separators=(',', ': '))
+      return pretty_print(tag_doc(graf_text), indent=False)
 
 
   ## test Spark email list message

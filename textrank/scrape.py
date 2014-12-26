@@ -78,7 +78,13 @@ if __name__ == "__main__":
   config = ConfigParser.ConfigParser()
   config.read("defaults.cfg")
 
+  iterations = config.getint("scraper", "iterations")
   base_url = config.get("scraper", "base_url")
   url = base_url + config.get("scraper", "start_url")
 
-  print pretty_print(parse_email(scrape_url(url), base_url))
+  with open(sys.argv[1], 'w') as f:
+    for i in xrange(0, iterations):
+      meta = parse_email(scrape_url(url), base_url)
+      f.write(pretty_print(meta))
+      f.write('\n')
+      url = meta["next_url"]

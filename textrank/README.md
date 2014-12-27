@@ -1,12 +1,28 @@
 # Microservices, Containers, and Machine Learning
 
-This project illustrates how to run advanced text analytics and graph
-algorithms at scale.
-Its archtecture demonstrates how to combine microservices and
-containers along with Big Data frameworks, for a practical approach
-to scaling out production systems.
+A frequently asked question on the Apache Spark user email list
+concerns where to find data sets for evaluating the code.
+
+Oddly enough, the collect of archived messages for this email list
+provides an excellent data set to evalute machine learning, graph
+algorithms, text analytics, time-series analysis, etc.
+
+
+Not every use case fits Big Data...
+
+This archtecture demonstrates how to combine microservices and
+containers along with Big Data frameworks, to leverage the best of
+each approach.
+
+That provides a practical way to scale out production systems.
+
+
 The intended use case helps surface insights about an open source
 developer community, based on the activity of its email forum.
+
+In a sense, these insighs assist the community to become more
+self-aware.
+
 As an example, we use data from the `<user@spark.apache.org>` 
 [email list archives](http://mail-archives.apache.org).
 
@@ -62,13 +78,14 @@ file.
 ### scrape the email list
 
 ```bash
-./scrape.py foo.txt
+./scrape.py foo.json
 ```
 
 ### parse the email text
 
 ```bash
-./parse.py foo.txt
+./filter.py foo.json
+./parse.py foo.json
 ```
 
 

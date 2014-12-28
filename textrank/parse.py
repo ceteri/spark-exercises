@@ -129,7 +129,8 @@ def main():
   with open(path, 'r') as f:
     for line in f.readlines():
       for graf_text in json.loads(line):
-        print parse_graf(graf_text)
+        for sent in parse_graf(graf_text):
+          print pretty_print(sent)
 
 
 if __name__ == "__main__":

@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-from dateutil import parser
-from tempfile import mkstemp
 import ConfigParser
+import dateutil.parser as dp
 import json
 import lxml.html
-import os
 import re
+import string
 import sys
 import time
 import urllib 
@@ -17,17 +16,11 @@ PAT_ID = re.compile("^.*\%3c(.*)\@.*$")
 
 
 def scrape_url (url):
-  """temp file workaround for lxml.html.parse() bug"""
+  """get the HTML and parse it as an XML doc"""
+  text = urllib.urlopen(url).read()
+  text = filter(lambda x: x in string.printable, text)
+  root = lxml.html.document_fromstring(text)
 
-  _, temp_path = mkstemp()
-  root = None
-
-  with open(temp_path, 'w') as f:
-    f.write(urllib.urlopen(url).read())
-    f.close()
-    root = lxml.html.parse(temp_path).getroot()
-
-  os.remove(temp_path)
   return root
 
 
@@ -43,7 +36,7 @@ def parse_email (root, base_url):
   meta["sender"] = root.xpath(path)[0].text
 
   path = "/html/body/table/tbody/tr[@class='date']/td[@class='right']"
-  meta["date"] = parser.parse(root.xpath(path)[0].text).isoformat()
+  meta["date"] = dp.parse(root.xpath(path)[0].text).isoformat()
 
   path = "/html/body/table/tbody/tr[@class='raw']/td[@class='right']/a"
   link = root.xpath(path)[0].get("href")
@@ -105,9 +98,9 @@ if __name__ == "__main__":
   with open(sys.argv[1], 'w') as f:
     for i in xrange(0, iterations):
       meta = parse_email(scrape_url(url), base_url)
-      print meta
 
       f.write(pretty_print(meta))
       f.write('\n')
+
       url = meta["next_url"]
       time.sleep(nap_time)

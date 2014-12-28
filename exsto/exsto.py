@@ -4,6 +4,7 @@
 import dateutil.parser as dp
 import json
 import lxml.html
+import os
 import re
 import string
 import urllib 
@@ -14,7 +15,7 @@ DEBUG = False # True
 ######################################################################
 ## scrape the Apache mailing list archives
 
-PAT_ID = re.compile("^.*\%3c(.*)\@.*$")
+PAT_EMAIL_ID = re.compile("^.*\%3c(.*)\@.*$")
 
 
 def scrape_url (url):
@@ -28,7 +29,7 @@ def scrape_url (url):
 
 def parse_email (root, base_url):
   """parse email fields from an lxml root"""
-  global PAT_ID
+  global PAT_EMAIL_ID
   meta = {}
 
   path = "/html/head/title"
@@ -42,7 +43,7 @@ def parse_email (root, base_url):
 
   path = "/html/body/table/tbody/tr[@class='raw']/td[@class='right']/a"
   link = root.xpath(path)[0].get("href")
-  meta["id"] = PAT_ID.match(link).group(1)
+  meta["id"] = PAT_EMAIL_ID.match(link).group(1)
 
   path = "/html/body/table/tbody/tr[@class='contents']/td/pre"
   meta["text"] = root.xpath(path)[0].text
@@ -63,7 +64,7 @@ def parse_email (root, base_url):
   
   if len(refs) > 0:
     link = refs[0].get("href")
-    meta["prev_thread"] = PAT_ID.match(link).group(1)
+    meta["prev_thread"] = PAT_EMAIL_ID.match(link).group(1)
   else:
     meta["prev_thread"] = ""
 
@@ -72,11 +73,96 @@ def parse_email (root, base_url):
   
   if len(refs) > 0:
     link = refs[0].get("href")
-    meta["next_thread"] = PAT_ID.match(link).group(1)
+    meta["next_thread"] = PAT_EMAIL_ID.match(link).group(1)
   else:
     meta["next_thread"] = ""
 
   return meta
+
+
+######################################################################
+## filter the novel text versus quoted text in an email message
+
+PAT_FORWARD = re.compile("\n\-+ Forwarded message \-+\n")
+PAT_REPLIED = re.compile("\nOn.*\d+.*\n?wrote\:\n+\>")
+PAT_UNSUBSC = re.compile("\n\-+\nTo unsubscribe,.*\nFor additional commands,.*")
+
+
+def split_grafs (lines):
+  """segment the raw text into paragraphs"""
+  graf = []
+
+  for line in lines:
+    line = line.strip()
+
+    if len(line) < 1:
+      if len(graf) > 0:
+        yield "\n".join(graf)
+        graf = []
+    else:
+      graf.append(line)
+
+  if len(graf) > 0:
+    yield "\n".join(graf)
+
+
+def filter_quotes (line):
+  """filter the quoted text out of a message"""
+  global DEBUG
+  global PAT_FORWARD, PAT_REPLIED, PAT_UNSUBSC
+
+  meta = json.loads(line)
+  text = filter(lambda x: x in string.printable, meta["text"])
+
+  if DEBUG:
+    print line
+    print text
+
+  # strip off quoted text in a forward
+  m = PAT_FORWARD.split(text, re.M)
+
+  if m and len(m) > 1:
+    text = m[0]
+
+  # strip off quoted text in a reply
+  m = PAT_REPLIED.split(text, re.M)
+
+  if m and len(m) > 1:
+    text = m[0]
+
+  # strip off any trailing unsubscription notice
+  m = PAT_UNSUBSC.split(text, re.M)
+
+  if m:
+    text = m[0]
+
+  # replace any remaining quoted text with blank lines
+  lines = []
+
+  for line in text.split("\n"):
+    if line.startswith(">"):
+      lines.append("")
+    else:
+      lines.append(line)
+
+  return list(split_grafs(lines))
+
+
+def test_filter (path):
+  """run the unit tests for known quoting styles"""
+  global DEBUG
+  DEBUG = True
+
+  for root, dirs, files in os.walk(path):
+    for file in files:
+      with open(path + file, 'r') as f:
+        line = f.readline()
+        grafs = filter_quotes(line)
+
+        if not grafs or len(grafs) < 1:
+          raise Exception("no results")
+        else:
+          print grafs
 
 
 ######################################################################

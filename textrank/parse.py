@@ -1,24 +1,20 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-# TextRank, based on:
-# http://web.eecs.umich.edu/~mihalcea/papers/mihalcea.emnlp04.pdf
-
-from itertools import tee, izip
-from textblob import TextBlob
-from textblob_aptagger import PerceptronTagger
 import hashlib
+import itertools
 import json
 import re
 import sys
-import uuid
+import textblob
+import textblob_aptagger as tag
 
 DEBUG = False # True
 
 PAT_PUNCT = re.compile(r'^\W+$')
 POS_KEEPS = ['v', 'n', 'j', 'r']
 POS_LEMMA = ['v', 'n']
-TAGGER = PerceptronTagger()
+TAGGER = tag.PerceptronTagger()
 UNIQ_WORDS = { ".": 0 }
 
 
@@ -37,13 +33,13 @@ def get_word_id (root):
 
 def sliding_window (iterable, size):
   """apply a sliding window to produce 'size' tiles"""
-  iters = tee(iterable, size)
+  iters = itertools.tee(iterable, size)
 
   for i in xrange(1, size):
     for each in iters[i:]:
       next(each, None)
 
-  return list(izip(*iters))
+  return list(itertools.izip(*iters))
 
 
 def get_tiles (graf, size=3):
@@ -56,19 +52,17 @@ def get_tiles (graf, size=3):
         yield (w0[0], w1[0],)
 
 
-def tag_doc (text):
-  """parse and markup a document"""
+def parse_graf (text):
+  """parse and markup each sentence in the given paragraph"""
   global DEBUG
-  global POS_KEEPS, POS_LEMMA, PAT_PUNCT, TAGGER
+  global PAT_PUNCT, POS_KEEPS, POS_LEMMA, TAGGER
 
-  m = hashlib.sha1()
-  i = 0
-  doc = []
-  tiles = []
+  markup = []
 
-  for s in TextBlob(text).sentences:
+  for s in textblob.TextBlob(text).sentences:
     graf = []
-    doc.append(graf)
+    m = hashlib.sha1()
+    i = 0
 
     pos = TAGGER.tag(str(s))
     p_idx = 0
@@ -106,18 +100,19 @@ def tag_doc (text):
       p_idx += 1
 
     # tile the pairs for TextRank
-    tiles.append(list(get_tiles(graf)))
+    tile = list(get_tiles(graf))
 
-  meta = {
-    "uuid": str(uuid.uuid4()).replace('-', ''),
-    "len": i,
-    "lang": s.detect_language(),
-    "sha1": m.hexdigest(),
-    "polarity": s.sentiment.polarity,
-    "subjectivity": s.sentiment.subjectivity
-    }
+    markup.append({
+        "size": i,
+        "lang": s.detect_language(),
+        "sha1": m.hexdigest(),
+        "polr": s.sentiment.polarity,
+        "subj": s.sentiment.subjectivity,
+        "graf": graf,
+        "tile": tile
+        })
 
-  return (meta, doc, tiles)
+  return markup
 
 
 def pretty_print (obj, indent=False):
@@ -128,36 +123,14 @@ def pretty_print (obj, indent=False):
     return json.dumps(obj, sort_keys=True)
 
 
-if __name__ == "__main__":
-  def new_graf (graf):
-    return [], " ".join(graf)
+def main():
+  path = sys.argv[1]
 
-
-  def parse_graf (graf_text):
-    global DEBUG
-
-    if DEBUG:
-      print graf_text
-
-    if len(graf_text) > 0:
-      return pretty_print(tag_doc(graf_text), indent=False)
-
-
-  ## test Spark email list message
-  ## https://www.mail-archive.com/user@spark.apache.org/msg17932.html
-
-  with open(sys.argv[1], 'r') as f:
-    graf, graf_text = new_graf("")
-
-    # segment raw text into paragraphs
+  with open(path, 'r') as f:
     for line in f.readlines():
-      line = line.strip()
-
-      if len(line) < 1:
-        graf, graf_text = new_graf(graf)
+      for graf_text in json.loads(line):
         print parse_graf(graf_text)
-      else:
-        graf.append(line)
 
-    graf, graf_text = new_graf(graf)
-    print parse_graf(graf_text)
+
+if __name__ == "__main__":
+  main()

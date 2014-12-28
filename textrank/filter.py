@@ -14,32 +14,26 @@ PAT_REPLIED = re.compile("\nOn.*\d+.*\n?wrote\:\n+\>")
 PAT_UNSUBSC = re.compile("\n\-+\nTo unsubscribe,.*\nFor additional commands,.*")
 
 
-def new_graf (graf):
-  return [], " ".join(graf)
-
-
 def split_grafs (lines):
-    graf, graf_text = new_graf("")
+  """segment the raw text into paragraphs"""
+  graf = []
 
-    # segment raw text into paragraphs
-    for line in lines:
-      line = line.strip()
+  for line in lines:
+    line = line.strip()
 
-      if len(line) < 1:
-        graf, graf_text = new_graf(graf)
+    if len(line) < 1:
+      if len(graf) > 0:
+        yield "\n".join(graf)
+        graf = []
+    else:
+      graf.append(line)
 
-        if len(graf_text) > 0:
-          yield graf_text
-      else:
-        graf.append(line)
-
-    graf, graf_text = new_graf(graf)
-
-    if len(graf_text) > 0:
-      yield graf_text
+  if len(graf) > 0:
+    yield "\n".join(graf)
 
 
-def filter_json (line):
+def filter_quotes (line):
+  """filter the quoted text out of a message"""
   global DEBUG
   global PAT_FORWARD, PAT_REPLIED, PAT_UNSUBSC
 
@@ -81,6 +75,7 @@ def filter_json (line):
 
 
 def test_cases (path):
+  """run the unit tests for known quoting styles"""
   global DEBUG
   DEBUG = True
 
@@ -88,7 +83,7 @@ def test_cases (path):
     for file in files:
       with open(path + file, 'r') as f:
         line = f.readline()
-        grafs = filter_json(line)
+        grafs = filter_quotes(line)
 
         if not grafs or len(grafs) < 1:
           raise Exception("no results")
@@ -104,7 +99,7 @@ def main ():
   else:
     with open(path, 'r') as f:
       for line in f.readlines():
-        print filter_json(line)
+        print json.dumps(filter_quotes(line))
 
 
 if __name__ == "__main__":

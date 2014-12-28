@@ -91,5 +91,6 @@ file.
 
 # Research Topics
 
-  * [microservices architecture](http://martinfowler.com/articles/microservices.html)
-  * [word2vec use cases](http://www.yseam.com/blog/WV.html)
+  * [TextRank](http://web.eecs.umich.edu/~mihalcea/papers/mihalcea.emnlp04.pdf)
+  * [Word2Vec use cases](http://www.yseam.com/blog/WV.html)
+  * [Microservices architecture](http://martinfowler.com/articles/microservices.html)

@@ -9,6 +9,7 @@ import lxml.html
 import os
 import re
 import sys
+import time
 import urllib 
 
 
@@ -48,19 +49,37 @@ def parse_email (root, base_url):
   link = root.xpath(path)[0].get("href")
   meta["id"] = PAT_ID.match(link).group(1)
 
-  path = "/html/body/table/thead/tr/th[@class='nav']/a[@title='Next by date']"
-  meta["next_url"] = base_url + root.xpath(path)[0].get("href")
-
-  path = "/html/body/table/thead/tr/th[@class='nav']/a[@title='Previous by thread']"
-  link = root.xpath(path)[0].get("href")
-  meta["prev_thread"] = PAT_ID.match(link).group(1)
-
-  path = "/html/body/table/thead/tr/th[@class='nav']/a[@title='Next by thread']"
-  link = root.xpath(path)[0].get("href")
-  meta["next_thread"] = PAT_ID.match(link).group(1)
-
   path = "/html/body/table/tbody/tr[@class='contents']/td/pre"
   meta["text"] = root.xpath(path)[0].text
+
+  # parse the optional elements
+
+  path = "/html/body/table/thead/tr/th[@class='nav']/a[@title='Next by date']"
+  refs = root.xpath(path)
+
+  if len(refs) > 0:
+    link = refs[0].get("href")
+    meta["next_url"] = base_url + link
+  else:
+    meta["next_url"] = ""
+
+  path = "/html/body/table/thead/tr/th[@class='nav']/a[@title='Previous by thread']"
+  refs = root.xpath(path)
+  
+  if len(refs) > 0:
+    link = refs[0].get("href")
+    meta["prev_thread"] = PAT_ID.match(link).group(1)
+  else:
+    meta["prev_thread"] = ""
+
+  path = "/html/body/table/thead/tr/th[@class='nav']/a[@title='Next by thread']"
+  refs = root.xpath(path)
+  
+  if len(refs) > 0:
+    link = refs[0].get("href")
+    meta["next_thread"] = PAT_ID.match(link).group(1)
+  else:
+    meta["next_thread"] = ""
 
   return meta
 
@@ -79,12 +98,16 @@ if __name__ == "__main__":
   config.read("defaults.cfg")
 
   iterations = config.getint("scraper", "iterations")
+  nap_time = config.getint("scraper", "nap_time")
   base_url = config.get("scraper", "base_url")
   url = base_url + config.get("scraper", "start_url")
 
   with open(sys.argv[1], 'w') as f:
     for i in xrange(0, iterations):
       meta = parse_email(scrape_url(url), base_url)
+      print meta
+
       f.write(pretty_print(meta))
       f.write('\n')
       url = meta["next_url"]
+      time.sleep(nap_time)

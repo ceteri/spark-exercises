@@ -11,6 +11,7 @@ import sys
 import time
 import urllib 
 
+DEBUG = False # True
 
 PAT_ID = re.compile("^.*\%3c(.*)\@.*$")
 
@@ -97,10 +98,13 @@ if __name__ == "__main__":
 
   with open(sys.argv[1], 'w') as f:
     for i in xrange(0, iterations):
-      meta = parse_email(scrape_url(url), base_url)
+      if len(url) < 1:
+        break
+      else:
+        meta = parse_email(scrape_url(url), base_url)
 
-      f.write(pretty_print(meta))
-      f.write('\n')
+        f.write(pretty_print(meta))
+        f.write('\n')
 
-      url = meta["next_url"]
-      time.sleep(nap_time)
+        url = meta["next_url"]
+        time.sleep(nap_time)

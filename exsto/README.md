@@ -97,6 +97,14 @@ verb meaning "to stand out", in its present active form.
 
 # Research Topics
 
+### machine learning
+
   * [TextRank](http://web.eecs.umich.edu/~mihalcea/papers/mihalcea.emnlp04.pdf)
   * [Word2Vec use cases](http://www.yseam.com/blog/WV.html)
+
+### microservices and containers
+
+  * [The Strengths and Weaknesses of Microservices](http://www.infoq.com/news/2014/05/microservices)
   * [Microservices architecture](http://martinfowler.com/articles/microservices.html)
+  * [Adrian Crockcroft @ DockerCon](https://blog.docker.com/2014/12/dockercon-europe-keynote-state-of-the-art-in-microservices-by-adrian-cockcroft-battery-ventures/)
+  * [Weave](https://github.com/zettio/weave)

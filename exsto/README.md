@@ -1,47 +1,43 @@
 # Microservices, Containers, and Machine Learning
 
-A frequently asked question on the Apache Spark user email list
-concerns where to find data sets for evaluating the code.
-
+A frequently asked question on the [Apache Spark](http://spark.apache.org/) 
+user email list concerns where to find data sets for evaluating the code.
 Oddly enough, the collect of archived messages for this email list
 provides an excellent data set to evalute machine learning, graph
 algorithms, text analytics, time-series analysis, etc.
 
-
-Not every use case fits Big Data...
-
-This archtecture demonstrates how to combine microservices and
-containers along with Big Data frameworks, to leverage the best of
-each approach.
-
-That provides a practical way to scale out production systems.
-
-
-The intended use case helps surface insights about an open source
-developer community, based on the activity of its email forum.
-
-In a sense, these insighs assist the community to become more
-self-aware.
-
+Herein, an open source developer community considers itself algorithmically.
+This project shows work-in-progress for how to surface data insights from 
+the developer email forums for an Apache open source project. 
+It leverages advanced technologies for natural language processing, machine 
+learning, graph algorithms, time series analysis, etc.
 As an example, we use data from the `<user@spark.apache.org>` 
-[email list archives](http://mail-archives.apache.org).
+[email list archives](http://mail-archives.apache.org) to help understand 
+its community better.
 
-Technologies used in this example include:
+In particular, we will shows production use of NLP tooling in Python, 
+integrated with
+[MLlib](http://spark.apache.org/docs/latest/mllib-guide.html)
+(machine learning) and 
+[GraphX](http://spark.apache.org/docs/latest/graphx-programming-guide.html)
+(graph algorithms) in Apache Spark. 
+Machine learning approaches used include: 
+[Word2Vec](https://code.google.com/p/word2vec/), 
+[TextRank](http://web.eecs.umich.edu/~mihalcea/papers/mihalcea.emnlp04.pdf),
+Connected Components, Streaming K-Means, etc.
 
-  * [Apache Spark](http://spark.apache.org/)
-  * [GraphX](http://spark.apache.org/docs/latest/graphx-programming-guide.html)
-  * [MLlib](http://spark.apache.org/docs/latest/mllib-guide.html)
-  * [Apache Mesos](http://mesos.apache.org/)
-  * [Docker](https://www.docker.com/)
-  * [Anaconda](http://continuum.io/downloads)
-  * [Flask](http://flask.pocoo.org/)
-  * [lxml.html](http://lxml.de/lxmlhtml.html)
-  * [python-dateutil](https://labix.org/python-dateutil)
-  * [NLTK](http://www.nltk.org/)
-  * [TextBlob](https://textblob.readthedocs.org/en/dev/)
-  * [Perceptron Tagger](http://stevenloria.com/tutorial-state-of-the-art-part-of-speech-tagging-in-textblob/)
-  * [TextRank](http://web.eecs.umich.edu/~mihalcea/papers/mihalcea.emnlp04.pdf)
-  * [Word2Vec](https://code.google.com/p/word2vec/)
+Keep in mind that "One Size Fits All" is an anti-pattern, especially for 
+Big Data tools. 
+This project illustrates how to leverage microservices and containers to 
+scale-out the code+data components that do not fit well in Spark, Hadoop, etc.
+
+In addition to Spark, other technologies used include: 
+[Mesos](http://mesos.apache.org/),
+[Docker](https://www.docker.com/),
+[Anaconda](http://continuum.io/downloads),
+[Flask](http://flask.pocoo.org/),
+[NLTK](http://www.nltk.org/),
+[TextBlob](https://textblob.readthedocs.org/en/dev/).
 
 
 ## Dependencies

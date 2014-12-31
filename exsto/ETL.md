@@ -48,8 +48,9 @@ whoMap = who.collectAsMap()
 
 ### Question: Who are the top K senders?
 
-A highly active open source developer community such as Apache Spark
-will have several thousand people engaged.
+[Apache Spark](http://spark.apache.org/) is one of the most
+active open source developer communities on Apache, so it
+will tend to have several thousand people engaged.
 Let's identify the most active ones.
 Then we can show a leaderboard and track changes in it over time.
 
@@ -74,7 +75,7 @@ Let's identify *who* those people are.
 Later we can leverage our graph analysis to determine *what* they discuss.
 
 NB: note the use case for `groupByKey` transformations; 
-sometimes it usage is indicated.
+sometimes its usage is indicated.
 
 ```python
 import itertools

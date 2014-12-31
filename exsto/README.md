@@ -85,7 +85,7 @@ file.
 ```
 
 
-# What's In A Name?
+# What's in a name?
 
 The word [exsto](http://en.wiktionary.org/wiki/exsto) is the Latin
 verb meaning "to stand out", in its present active form.
@@ -97,6 +97,7 @@ verb meaning "to stand out", in its present active form.
 
   * [TextRank](http://web.eecs.umich.edu/~mihalcea/papers/mihalcea.emnlp04.pdf)
   * [Word2Vec use cases](http://www.yseam.com/blog/WV.html)
+  * [Word2Vec vs. GloVe](http://radimrehurek.com/2014/12/making-sense-of-word2vec/)
 
 ### microservices and containers
 

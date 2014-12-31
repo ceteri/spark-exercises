@@ -110,16 +110,14 @@ def split_grafs (lines):
     yield "\n".join(graf)
 
 
-def filter_quotes (line):
+def filter_quotes (text):
   """filter the quoted text out of a message"""
   global DEBUG
   global PAT_FORWARD, PAT_REPLIED, PAT_UNSUBSC
 
-  meta = json.loads(line)
-  text = filter(lambda x: x in string.printable, meta["text"])
+  text = filter(lambda x: x in string.printable, text)
 
   if DEBUG:
-    print line
     print text
 
   # strip off quoted text in a forward
@@ -161,7 +159,8 @@ def test_filter (path):
     for file in files:
       with open(path + file, 'r') as f:
         line = f.readline()
-        grafs = filter_quotes(line)
+        meta = json.loads(line)
+        grafs = filter_quotes(meta["text"])
 
         if not grafs or len(grafs) < 1:
           raise Exception("no results")

@@ -212,7 +212,7 @@ def get_tiles (graf, size=3):
         yield (w0[0], w1[0],)
 
 
-def parse_graf (text):
+def parse_graf (msg_id, text):
   """parse and markup each sentence in the given paragraph"""
   global DEBUG
   global PAT_PUNCT, POS_KEEPS, POS_LEMMA, TAGGER
@@ -262,9 +262,10 @@ def parse_graf (text):
     # tile the pairs for TextRank
     tile = list(get_tiles(graf))
 
+    #"lang": s.detect_language(),
     markup.append({
+        "id": msg_id,
         "size": i,
-        "lang": s.detect_language(),
         "sha1": m.hexdigest(),
         "polr": s.sentiment.polarity,
         "subj": s.sentiment.subjectivity,

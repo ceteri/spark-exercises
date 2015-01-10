@@ -87,11 +87,11 @@ def map_graf_edges (x):
       yield (j["id"], n0, n1,)
       yield (j["id"], n1, n0,)
 
-graf = sc.textFile("parsed")
-n = graf.flatMap(map_graf_edges).count()
+graf = sc.textFile("parsed").flatMap(map_graf_edges)
+n = graf.count()
 print "\ngraf edges", n
 
-edgeSchema = graf.map(lambda p: Row(id=p[0], node0=p[1], node1=p[2]))
+edgeSchema = graf.map(lambda p: Row(id=p[0], node0=int(p[1]), node1=int(p[2])))
 
 edgeTable = sqlCtx.inferSchema(edgeSchema)
 edgeTable.saveAsParquetFile("graf_edge.parquet")
@@ -103,11 +103,11 @@ def map_graf_nodes (x):
   for word in j["graf"]:
     yield [j["id"]] + word
 
-graf = sc.textFile("parsed")
-n = graf.flatMap(map_graf_nodes).count()
+graf = sc.textFile("parsed").flatMap(map_graf_nodes)
+n = graf.count()
 print "\ngraf nodes", n
 
-nodeSchema = graf.map(lambda p: Row(id=p[0], node_id=p[1], raw=p[2], root=p[3], pos=p[4], keep=p[5], num=p[6]))
+nodeSchema = graf.map(lambda p: Row(id=p[0], node_id=int(p[1]), raw=p[2], root=p[3], pos=p[4], keep=p[5], num=int(p[6])))
 
 nodeTable = sqlCtx.inferSchema(nodeSchema)
 nodeTable.saveAsParquetFile("graf_node.parquet")

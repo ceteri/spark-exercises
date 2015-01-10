@@ -64,12 +64,12 @@ print top_convo.take(10)
 # Prepare for Sender/Reply Graph Analysis
 
 edge = top_convo.map(lambda (a, b): (whoMap.get(b[0]), whoMap.get(b[1]), a,))
-edgeSchema = edge.map(lambda p: Row(replier=p[0], sender=p[1], count=int(p[2])))
+edgeSchema = edge.map(lambda p: Row(replier=long(p[0]), sender=long(p[1]), num=int(p[2])))
 edgeTable = sqlCtx.inferSchema(edgeSchema)
 edgeTable.saveAsParquetFile("reply_edge.parquet")
 
 node = who.map(lambda (a, b): (b, a))
-nodeSchema = node.map(lambda p: Row(id=int(p[0]), sender=p[1]))
+nodeSchema = node.map(lambda p: Row(id=long(p[0]), sender=p[1]))
 nodeTable = sqlCtx.inferSchema(nodeSchema)
 nodeTable.saveAsParquetFile("reply_node.parquet")
 

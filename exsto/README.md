@@ -15,6 +15,9 @@ As an example, we use data from the `<user@spark.apache.org>`
 [email list archives](http://mail-archives.apache.org) to help understand 
 its community better.
 
+See [DataDayTexas 2015 session talk]
+(http://www.slideshare.net/pacoid/microservices-containers-and-machine-learning)
+
 In particular, we will shows production use of NLP tooling in Python, 
 integrated with
 [MLlib](http://spark.apache.org/docs/latest/mllib-guide.html)

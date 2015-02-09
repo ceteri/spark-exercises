@@ -6,14 +6,27 @@ import json
 import sys
 
 
+DEBUG = False # True
+
 def main():
+  global DEBUG
+
   path = sys.argv[1]
 
   with open(path, 'r') as f:
     for line in f.readlines():
-      for graf_text in json.loads(line):
-        for sent in exsto.parse_graf(graf_text):
-          print exsto.pretty_print(sent)
+      meta = json.loads(line)
+      base = 0
+
+      for graf_text in exsto.filter_quotes(meta["text"]):
+        if DEBUG:
+          print graf_text
+
+        grafs, new_base = exsto.parse_graf(meta["id"], graf_text, base)
+        base = new_base
+
+        for graf in grafs:
+          print exsto.pretty_print(graf)
 
 
 if __name__ == "__main__":

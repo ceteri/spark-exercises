@@ -3,7 +3,6 @@
 
 import dateutil.parser as dp
 import hashlib
-import itertools
 import json
 import lxml.html
 import os
@@ -172,10 +171,16 @@ def test_filter (path):
 ## parse and markup text paragraphs for semantic analysis
 
 PAT_PUNCT = re.compile(r'^\W+$')
-POS_KEEPS = ['v', 'n', 'j', 'r']
+PAT_SPACE = re.compile(r'\_+$')
+
+POS_KEEPS = ['v', 'n', 'j']
 POS_LEMMA = ['v', 'n']
 TAGGER = tag.PerceptronTagger()
 UNIQ_WORDS = { ".": 0 }
+
+
+def is_not_word (word):
+  return PAT_PUNCT.match(word) or PAT_SPACE.match(word)
 
 
 def get_word_id (root):
@@ -191,38 +196,31 @@ def get_word_id (root):
   return UNIQ_WORDS[root]
 
 
-def sliding_window (iterable, size):
-  """apply a sliding window to produce 'size' tiles"""
-  iters = itertools.tee(iterable, size)
-
-  for i in xrange(1, size):
-    for each in iters[i:]:
-      next(each, None)
-
-  return list(itertools.izip(*iters))
-
-
 def get_tiles (graf, size=3):
   """generate word pairs for the TextRank graph"""
-  for seq in sliding_window(graf, size):
-    for word in seq[1:]:
-      w0, w1 = (seq[0], word,)
+  graf_len = len(graf)
+
+  for i in xrange(0, graf_len):
+    w0 = graf[i]
+
+    for j in xrange(i + 1, min(graf_len, i + 1 + size)):
+      w1 = graf[j]
 
       if w0[4] == w1[4] == 1:
         yield (w0[0], w1[0],)
 
 
-def parse_graf (msg_id, text):
+def parse_graf (msg_id, text, base):
   """parse and markup each sentence in the given paragraph"""
   global DEBUG
-  global PAT_PUNCT, POS_KEEPS, POS_LEMMA, TAGGER
+  global POS_KEEPS, POS_LEMMA, TAGGER
 
   markup = []
+  i = base
 
   for s in textblob.TextBlob(text).sentences:
     graf = []
     m = hashlib.sha1()
-    i = 0
 
     pos = TAGGER.tag(str(s))
     p_idx = 0
@@ -231,14 +229,20 @@ def parse_graf (msg_id, text):
     while p_idx < len(pos):
       p = pos[p_idx]
 
-      if (p[1] == "SYM") or PAT_PUNCT.match(p[0]):
+      if DEBUG:
+        print "IDX", p_idx, p
+        print "reg", is_not_word(p[0])
+        print "   ", w_idx, len(s.words), s.words
+        print graf
+
+      if is_not_word(p[0]) or (p[1] == "SYM"):
         if (w_idx == len(s.words) - 1):
           w = p[0]
           t = '.'
         else:
           p_idx += 1
           continue
-      else:
+      elif w_idx < len(s.words):
         w = s.words[w_idx]
         t = p[1].lower()[0]
         w_idx += 1
@@ -265,7 +269,7 @@ def parse_graf (msg_id, text):
     #"lang": s.detect_language(),
     markup.append({
         "id": msg_id,
-        "size": i,
+        "size": len(graf),
         "sha1": m.hexdigest(),
         "polr": s.sentiment.polarity,
         "subj": s.sentiment.subjectivity,
@@ -273,7 +277,7 @@ def parse_graf (msg_id, text):
         "tile": tile
         })
 
-  return markup
+  return markup, i
 
 
 ######################################################################

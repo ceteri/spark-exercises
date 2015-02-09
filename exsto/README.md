@@ -77,14 +77,13 @@ file.
 ### scrape the email list
 
 ```bash
-./scrape.py foo.json
+./scrape.py data/foo.json
 ```
 
 ### parse the email text
 
 ```bash
-./filter.py foo.json
-./parse.py foo.json
+./parse.py data/foo.json parsed/foo.json
 ```
 
 

@@ -1,0 +1,5 @@
+*.pyc
+*~
+*.parquet/
+parsed/
+data/

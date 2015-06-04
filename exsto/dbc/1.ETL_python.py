@@ -1,4 +1,4 @@
-# Databricks notebook source exported at Mon, 9 Feb 2015 04:37:11 UTC
+# Databricks notebook source exported at Thu, 4 Jun 2015 02:03:35 UTC
 # MAGIC %md
 # MAGIC ## ETL in PySpark with Spark SQL
 # MAGIC 
@@ -102,7 +102,7 @@ print "top senders:", top_sender.take(11)
 # MAGIC FROM msg 
 # MAGIC GROUP BY sender 
 # MAGIC ORDER BY msg_count DESC
-# MAGIC LIMIT 100
+# MAGIC LIMIT 25
 
 # COMMAND ----------
 
@@ -112,6 +112,7 @@ print "top senders:", top_sender.take(11)
 
 from dateutil import parser
 from pyspark.sql import Row
+from pyspark.sql.types import *
 
 def days_hours_minutes (td):
     return float(td.days) + float(td.seconds) / 3600 + (float(td.seconds) / 60) % 60
@@ -125,8 +126,10 @@ GROUP BY sender
 leaders = sqlContext.sql(sql) \
  .map(lambda x: (x[0], int(x[1]), days_hours_minutes(parser.parse(x[3]) - parser.parse(x[2]))))
   
-leadSchema = leaders.map(lambda p: Row(sender=p[0], count=int(p[1]), duration=float(p[2])))
-leadTable = sqlContext.inferSchema(leadSchema)
+fields = [StructField("sender", StringType(), True), StructField("count", IntegerType(), True), StructField("duration", FloatType(), True)]
+schema = StructType(fields)
+
+leadTable = sqlContext.createDataFrame(leaders, schema)
 leadTable.registerTempTable("leaders")
 
 # COMMAND ----------
@@ -216,8 +219,11 @@ print "top convo", top_convo.take(10)
 # COMMAND ----------
 
 conv = top_convo.map(lambda p: (p[0], whoInv.value.get(p[1][0]), whoInv.value.get(p[1][1]),))
-convSchema = conv.map(lambda p: Row(count=int(p[0]), sender=p[1], replier=p[2]))
-convTable = sqlContext.inferSchema(convSchema)
+
+fields = [StructField("count", IntegerType(), True), StructField("sender", StringType(), True), StructField("replier", StringType(), True)]
+schema = StructType(fields)
+
+convTable = sqlContext.createDataFrame(conv, schema)
 convTable.registerTempTable("conv")
 
 # COMMAND ----------
@@ -252,13 +258,19 @@ dbutils.fs.rm("/mnt/paco/exsto/graph/reply_node.parquet", True)
 # COMMAND ----------
 
 edge = top_convo.map(lambda (a, b): (long(b[0]), long(b[1]), a,))
-edgeSchema = edge.map(lambda p: Row(replier=long(p[0]), sender=long(p[1]), count=int(p[2])))
-edgeTable = sqlContext.inferSchema(edgeSchema)
+
+fields = [StructField("replier", LongType(), True), StructField("sender", LongType(), True), StructField("count", IntegerType(), True)]
+schema = StructType(fields)
+
+edgeTable = sqlContext.createDataFrame(edge, schema)
 edgeTable.saveAsParquetFile("/mnt/paco/exsto/graph/reply_edge.parquet")
 
 node = who.map(lambda (a, b): (long(b), a))
-nodeSchema = node.map(lambda p: Row(id=long(p[0]), sender=p[1]))
-nodeTable = sqlContext.inferSchema(nodeSchema)
+
+fields = [StructField("id", LongType(), True), StructField("sender", StringType(), True)]
+schema = StructType(fields)
+
+nodeTable = sqlContext.createDataFrame(node, schema)
 nodeTable.saveAsParquetFile("/mnt/paco/exsto/graph/reply_node.parquet")
 
 
@@ -324,12 +336,20 @@ dbutils.fs.rm("/mnt/paco/exsto/graph/graf_node.parquet", True)
 
 # COMMAND ----------
 
-grafEdgeSchema = grafEdge.map(lambda p: Row(id=p[0], node0=long(p[1]), node1=long(p[2])))
-grafEdgeTable = sqlContext.inferSchema(grafEdgeSchema)
+fields = [StructField("id", StringType(), True), StructField("node0", LongType(), True), StructField("node1", LongType(), True)]
+schema = StructType(fields)
+
+grafEdgeTable = sqlContext.createDataFrame(grafEdge, schema)
 grafEdgeTable.saveAsParquetFile("/mnt/paco/exsto/graph/graf_edge.parquet")
 
 # COMMAND ----------
 
-grafNodeSchema = grafNode.map(lambda p: Row(id=p[0], node_id=long(p[1]), raw=p[2], root=p[3], pos=p[4], keep=int(p[5]), num=int(p[6])))
-grafNodeTable = sqlContext.inferSchema(grafNodeSchema)
+fields = [StructField("id", StringType(), True), StructField("node_id", LongType(), True), StructField("raw", StringType(), True), StructField("root", StringType(), True), StructField("pos", StringType(), True), StructField("keep", IntegerType(), True), StructField("num", IntegerType(), True)]
+schema = StructType(fields)
+
+grafNodeTable = sqlContext.createDataFrame(grafNode, schema)
 grafNodeTable.saveAsParquetFile("/mnt/paco/exsto/graph/graf_node.parquet")
+
+# COMMAND ----------
+
+

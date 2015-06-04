@@ -1,4 +1,4 @@
-// Databricks notebook source exported at Mon, 9 Feb 2015 11:25:45 UTC
+// Databricks notebook source exported at Thu, 4 Jun 2015 02:07:20 UTC
 // MAGIC %md ## Augmented TextRank in Spark
 // MAGIC The following is a 
 // MAGIC [Spark](http://spark.apache.org/)
@@ -51,19 +51,19 @@ import org.apache.spark.rdd.RDD
 
 // COMMAND ----------
 
-// use in parallelized version
-
 val sql = """
 SELECT node_id, root 
 FROM node 
 WHERE id='%s' AND keep=1
 """.format(msg_id)
 
-val n = sqlContext.sql(sql.stripMargin).distinct()
+val n = sqlContext.sql(sql.stripMargin)
+
+// COMMAND ----------
 
 val nodes: RDD[(Long, String)] = n.map{ p =>
   (p(0).asInstanceOf[Long], p(1).asInstanceOf[String])
-}
+}.distinct()
 
 nodes.collect()
 
@@ -73,19 +73,19 @@ nodes.collect()
 
 // COMMAND ----------
 
-// use in parallelized version
-
 val sql = """
 SELECT node0, node1 
 FROM edge 
 WHERE id='%s'
 """.format(msg_id)
 
-val e = sqlContext.sql(sql.stripMargin).distinct()
+// COMMAND ----------
+
+val e = sqlContext.sql(sql.stripMargin)
 
 val edges: RDD[Edge[Int]] = e.map{ p =>
   Edge(p(0).asInstanceOf[Long], p(1).asInstanceOf[Long], 0)
-}
+}.distinct()
 
 edges.collect()
 
@@ -96,8 +96,6 @@ edges.collect()
 
 // COMMAND ----------
 
-// use in parallelized version
-
 val g: Graph[String, Int] = Graph(nodes, edges)
 val r = g.pageRank(0.0001).vertices
 
@@ -107,15 +105,13 @@ val r = g.pageRank(0.0001).vertices
 
 // COMMAND ----------
 
-// use in parallelized version
-
 case class Rank(id: Int, rank: Double, word: String)
 
 val rank = r.join(nodes).map {
   case (node_id, (rank, word)) => Rank(node_id.toInt, rank, word)
 }
 
-rank.registerTempTable("rank")
+rank.toDF().registerTempTable("rank")
 
 // COMMAND ----------
 
@@ -130,8 +126,6 @@ rank.registerTempTable("rank")
 // MAGIC Okay, from purely a keyword perspective we've got some rankings. However, to make these useful, we need to go back to the sequence of the words in the text and pull out the top-ranked phrases overall.  We'll create `rankMap` to use for that...
 
 // COMMAND ----------
-
-// use in parallelized version
 
 val rankMap = rank.map(r => (r.id, r.rank)).collectAsMap()
 
@@ -168,8 +162,6 @@ node.printSchema
 
 // COMMAND ----------
 
-// use in parallelized version
-
 val sql = """
 SELECT num, node_id, raw, pos, keep
 FROM node
@@ -184,8 +176,6 @@ val para = sqlContext.sql(sql)
 // MAGIC %md The parsed text for the given message looks like the following sequence...
 
 // COMMAND ----------
-
-// use in parallelized version
 
 val paraSeq = para
  .map(r => (r(0).asInstanceOf[Int], r(1).asInstanceOf[Long], r(2).toString, r(3).toString, r(4).asInstanceOf[Int]))
@@ -248,7 +238,7 @@ def extractPhrases (s: Seq[(Int, Long, String, String, Int)]): Seq[(String, Doub
 
 case class Phrase(phrase: String, norm_rank: Double)
 
-val phraseRdd = sc.parallelize(extractPhrases(paraSeq)).map(p => Phrase(p._1, p._2))
+val phraseRdd = sc.parallelize(extractPhrases(paraSeq)).map(p => Phrase(p._1, p._2)).toDF()
 phraseRdd.registerTempTable("phrase")
 
 // COMMAND ----------
@@ -289,49 +279,3 @@ para.map(x => (x(2).asInstanceOf[String].toLowerCase(), 1))
 // MAGIC 
 // MAGIC That's why you probably want to clean-up and enrich the results of text analytics before other algorithms consume them downstream as *features*.
 // MAGIC Otherwise, `GIGO` as they say.
-
-// COMMAND ----------
-
-// MAGIC %md ### Parallelized Version
-// MAGIC 
-// MAGIC Let's pull all of these pieces together into a function that can be run in parallel at scale...
-
-// COMMAND ----------
-
-import org.apache.spark.graphx._
-import org.apache.spark.rdd.RDD
-
-case class Rank(id: Int, rank: Double, word: String)
-
-def textRank (msg_id: String): Seq[(String, Double)] = {
-  var sql = s"SELECT node_id, root FROM node WHERE id='%s' AND keep=1".format(msg_id)
-
-  val nodes: RDD[(Long, String)] = sqlContext.sql(sql).distinct()
-    .map{ p =>
-      (p(0).asInstanceOf[Long], p(1).asInstanceOf[String])
-    }
-
-  sql = s"SELECT node0, node1 FROM edge WHERE id='%s'".format(msg_id)
-
-  val edges: RDD[Edge[Int]] = sqlContext.sql(sql).distinct()
-    .map{ p =>
-      Edge(p(0).asInstanceOf[Long], p(1).asInstanceOf[Long], 0)
-    }
-
-  val g: Graph[String, Int] = Graph(nodes, edges)
-
-  val rankMap = g.pageRank(0.0001).vertices
-    .join(nodes)
-    .map {
-      case (node_id, (rank, word)) => (node_id.toInt, rank)
-    }.collectAsMap()
-
-  sql = s"SELECT num, node_id, raw, pos, keep FROM node WHERE id='%s' ORDER BY num ASC".format(msg_id)
-
-  val paraSeq = sqlContext.sql(sql)
-   .map(r => (r(0).asInstanceOf[Int], r(1).asInstanceOf[Long], r(2).toString, r(3).toString, r(4).asInstanceOf[Int]))
-   .collect
-   .toSeq
-
-  extractPhrases(paraSeq)
-}
